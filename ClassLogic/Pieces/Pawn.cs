@@ -54,20 +54,33 @@ namespace ClassLogic
                 }
             }
         }
-        private IEnumerable<Move> DiagonalMoves(Position from, Board board)
+        private IEnumerable<Move> DiagonalMoves(Position from, Board board)// ăn chéo
         {
-            foreach (Direction dir in new Direction[] { Direction.NorthEast, Direction.NorthWest })
+            Direction[] diagonalDirs = Color == Player.White
+                ? new Direction[] { Direction.NorthEast, Direction.NorthWest }
+                : new Direction[] { Direction.SouthEast, Direction.SouthWest };
+
+            foreach (Direction dir in diagonalDirs)
             {
-                Position to = from + forward + dir;
-                if (CanCaptureAt(to, board))
+                Position to = from + dir;
+                if (CanCaptureAt(to, board))// check xem quân đối phương ở vị trí ăn được k
                 {
                     yield return new NormalMove(from, to);
                 }
             }
         }
+
         public override IEnumerable<Move> GetMoves(Position from, Board board)
         {
             return ForwardMoves(from, board).Concat(DiagonalMoves(from, board));
+        }
+        public override bool CanCaptureOpponentKing(Position from, Board board)
+        {
+            return DiagonalMoves(from, board).Any(move =>
+            {
+                Piece piece = board[move.ToPos];
+                return piece != null && piece.Type == PieceType.King ;
+            });
         }
     }
 }

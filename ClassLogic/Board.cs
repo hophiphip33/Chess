@@ -60,5 +60,43 @@ namespace ClassLogic
         {
             return this[pos] == null ;
         }
+        public IEnumerable<Position> PiecePositions()//ds vi tri cac quan tren ban
+        {
+            for (int row = 0; row < 8; row++)
+            {
+                for (int column = 0; column < 8; column++)
+                {
+                    Position pos = new Position(row, column);
+                    if (!IsEmpty(pos))
+                    {
+                        yield return pos;
+                    }
+                   
+                }
+            }
+        }
+        public IEnumerable<Position> PiecePositionsFor(Player player)// loc ds vi tri quan theo player
+        {
+            return PiecePositions()
+                .Where(pos => this[pos].Color == player);
+        }
+        public bool IsInCheck(Player player)
+        {
+            return PiecePositionsFor(player.Opponent()) // doi thu dang chieu
+                .Any(pos =>
+                {
+                    Piece piece = this[pos];
+                    return piece.CanCaptureOpponentKing(pos, this);
+                });
+        }
+        public Board Copy()// tao ban sao co  de kiem tra  gia dinh k thay doi ban goc
+        {
+            Board copy = new Board();
+            foreach (Position pos in PiecePositions())
+            {
+                copy[pos] = this[pos].Copy();
+            }
+            return copy;
+        }
     }
 }
