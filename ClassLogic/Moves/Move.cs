@@ -12,5 +12,12 @@ namespace ClassLogic
         public abstract Position FromPos { get; }
         public abstract Position ToPos { get; }
         public abstract void Execute(Board board);
+        public virtual bool IsLegal(Board board)/// kiem tra vua bi chieu k de di chuyen
+        {
+            Player player = board[FromPos].Color;
+            Board boardCopy = board.Copy();
+            Execute(boardCopy);
+            return !boardCopy.IsInCheck(player);
+        }
     }
 }
