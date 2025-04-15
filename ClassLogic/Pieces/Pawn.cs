@@ -33,7 +33,7 @@ namespace ClassLogic
         {
             return Board.IsInside(pos) && board.IsEmpty(pos);
         }
-        private bool CanCaptureAt(Position pos, Board board)
+        private bool CanCaptureAt(Position pos, Board board)// kiểm tra ăn đc k
         {
             if (!Board.IsInside(pos) || board.IsEmpty(pos))
             {
@@ -41,12 +41,33 @@ namespace ClassLogic
             }
             return board[pos].Color != Color;
         }
+
+        private IEnumerable<Move> PromotionMoves(Position from, Position to)
+        {
+            yield return new PawnPromotion(from, to, PieceType.Queen);
+            yield return new PawnPromotion(from, to, PieceType.Rook);
+            yield return new PawnPromotion(from, to, PieceType.Bishop);
+            yield return new PawnPromotion(from, to, PieceType.Knight);
+        }
         private IEnumerable<Move> ForwardMoves(Position from, Board board)
         {
             Position oneMovePos = from + forward;
             if (CanMoveTo(oneMovePos, board))
             {
-                yield return new NormalMove(from, oneMovePos);
+                if (oneMovePos.Row ==0|| oneMovePos.Row == 7)
+                {
+                    foreach (Move proMove in PromotionMoves(from, oneMovePos))
+                    {
+                        yield return proMove;
+                    }
+                }
+                else
+                {
+                    yield return new NormalMove(from, oneMovePos);
+                }
+
+
+               
                 Position twoMovePos = oneMovePos + forward;
                 if (!HasMoved && CanMoveTo(twoMovePos, board))
                 {
@@ -65,7 +86,17 @@ namespace ClassLogic
                 Position to = from + dir;
                 if (CanCaptureAt(to, board))// check xem quân đối phương ở vị trí ăn được k
                 {
-                    yield return new NormalMove(from, to);
+                    if (to.Row == 0 || to.Row == 7)
+                    {
+                        foreach (Move proMove in PromotionMoves(from, to))
+                        {
+                            yield return proMove;
+                        }
+                    }
+                    else
+                    {
+                        yield return new NormalMove(from, to);
+                    }
                 }
             }
         }

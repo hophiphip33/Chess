@@ -15,7 +15,7 @@ namespace ChessUI
    
     public partial class MainWindow : Window
     {
-        private readonly Image[,] piecesImages = new Image[8, 8];
+        private readonly Image[,] pieceImages = new Image[8, 8];
         private readonly Rectangle[,] highlights = new Rectangle[8, 8];
         private readonly Dictionary<Position, Move> moveCache = new Dictionary<Position, Move>();
         private GameState gameState;
@@ -34,7 +34,7 @@ namespace ChessUI
                 for (int j = 0; j < 8; j++)
                 {
                     Image image = new Image();
-                    piecesImages[i, j] = image;
+                    pieceImages[i, j] = image;
                     PieceGrid.Children.Add(image);// Thêm ảnh quân cờ vào lưới hiển thị.
 
 
@@ -51,13 +51,15 @@ namespace ChessUI
                 for (int j = 0; j < 8; j++)
                 {
                     Piece piece = board[i, j];
-                    piecesImages[i, j].Source = Images.GetImage(piece);//Gán hình ảnh tương ứng
+                    pieceImages[i, j].Source = Images.GetImage(piece);//Gán hình ảnh tương ứng
 
                 }
             }
         }
         private void BoardGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (IsMenuOnScreen())
+                return;//Nếu menu đang hiển thị thì không cho click vào bàn cờ
             Point point = e.GetPosition(BoardGrid);
             Position pos = ToSquarePosition(point);
             if(selectedPos == null)
@@ -87,19 +89,45 @@ namespace ChessUI
             
                 selectedPos = null;
                 HideHighLights();
-                if (moveCache.TryGetValue(pos, out Move move))// kt xem ô có nằm trong ds nước đi k
+            if (moveCache.TryGetValue(pos, out Move move))// kt xem ô có nằm trong ds nước đi k
+            {
+                if (move.Type == MoveType.PawnPromotion)//Nếu là nước đi phong hậu
+                {
+                    HandlePromotion(move.FromPos, move.ToPos);
+                }
+                else
                 {
                     HandleMove(move);
                 }
-            
+            }
         }
 
+        private void HandlePromotion(Position from, Position to)
+        {
+            pieceImages[from.Row, from.Column].Source = Images.GetImage(gameState.CurrentPlayer, PieceType.Pawn );
+            pieceImages[to.Row, to.Column].Source = null;
+
+            PromotionMenu promMenu = new PromotionMenu(gameState.CurrentPlayer);//Hiển thị menu phong hậu.
+            MenuContainer.Content = promMenu;
+
+            promMenu.PieceSelected += type =>
+            {
+                MenuContainer.Content = null;
+                Move promMove = new PawnPromotion(from, to, type);
+                HandleMove(promMove);//Thực hiện nước đi phong hậu
+
+            };
+        }
         private void HandleMove(Move move)
         {
             gameState.MakeMove(move);// Cập nhật trạng thái game
             DrawBoard(gameState.Board);// Vẽ lại bàn cờ
             HideHighLights();
             SetCursor(gameState.CurrentPlayer);// Đặt lại con trỏ chuột
+            if(gameState.IsGameOver())//Nếu game đã kết thúc
+            {
+                ShowGameOver();
+            }
         }
         private Position ToSquarePosition(Point point)//Chuyển tọa độ chuột thành vị trí ô
         {
@@ -141,6 +169,35 @@ namespace ChessUI
             {
                 Cursor = ChessCursors.BlackCursor;
             }
+        }
+        private bool IsMenuOnScreen()
+        {
+            return MenuContainer.Content != null;
+        }
+        private void ShowGameOver()
+        {
+            GameOverMenu gameOverMenu = new GameOverMenu(gameState);
+            MenuContainer.Content = gameOverMenu;
+            gameOverMenu.OptionSelected += (s, option) =>
+            {
+                if(option == Option.Restart)
+                {
+                    MenuContainer.Content = null;
+                    RestartGame();
+                }
+                else 
+                {
+                    Application.Current.Shutdown();
+                }
+            };
+        }
+        private void RestartGame()
+        {
+            HideHighLights();
+            moveCache.Clear();
+            gameState = new GameState(Player.White, Board.Initial());
+            DrawBoard(gameState.Board);
+            SetCursor(gameState.CurrentPlayer);
         }
     }
 }

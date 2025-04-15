@@ -10,6 +10,7 @@ namespace ClassLogic
     {
         public Board Board { get; }
         public Player CurrentPlayer { get; private set; }
+        public Result result { get; private set; } = null;
         public GameState( Player player, Board board)
         {
             CurrentPlayer = player;
@@ -25,10 +26,38 @@ namespace ClassLogic
             IEnumerable<Move> moveCandidates = piece.GetMoves(pos, Board);
             return moveCandidates.Where(move => move.IsLegal(Board));
         }
-        public void MakeMove(Move move) 
+        public void MakeMove(Move move) //Thực hiện nước đi
         { 
             move.Execute(Board);
             CurrentPlayer = CurrentPlayer.Opponent();
+            CheckForGameOver();
+        }
+        public IEnumerable<Move> AllLegalMovesFor(Player player) // danh sách nước đi hợp lệ cho player
+        {
+            IEnumerable<Move> moveCandidates = Board.PiecePositionsFor(player)
+                .SelectMany(pos => {
+                    Piece piece = Board[pos];
+                    return piece.GetMoves(pos, Board);
+                });
+            return moveCandidates.Where(move => move.IsLegal(Board));
+        }
+        private void CheckForGameOver() { 
+        if (!AllLegalMovesFor(CurrentPlayer).Any())
+            {
+                if (Board.IsInCheck(CurrentPlayer))
+                {
+                    result = Result.Win(CurrentPlayer.Opponent());
+                }
+                else
+                {
+                    result = Result.Draw(EndReason.Stalemate);
+                }
+            }
+        }
+        public bool IsGameOver()
+        {
+            return result != null;
         }
     }
 }
+

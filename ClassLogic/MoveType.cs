@@ -3,10 +3,11 @@
     public enum MoveType
     {
         Normal,
+        Castle,
         CastleKS,
         CastleQS,
-        DoblePawn,
+        DoublePawn,
         EnPassant,
-        PawmPromotion,
+        PawnPromotion,
     }
 }
