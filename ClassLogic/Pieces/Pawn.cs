@@ -71,7 +71,7 @@ namespace ClassLogic
                 Position twoMovePos = oneMovePos + forward;
                 if (!HasMoved && CanMoveTo(twoMovePos, board))
                 {
-                    yield return new NormalMove(from, twoMovePos);
+                    yield return new DoublePawn(from, twoMovePos);
                 }
             }
         }
@@ -84,7 +84,14 @@ namespace ClassLogic
             foreach (Direction dir in diagonalDirs)
             {
                 Position to = from + dir;
-                if (CanCaptureAt(to, board))// check xem quân đối phương ở vị trí ăn được k
+
+                if(to ==board.GetPawnSkipPosition(Color.Opponent()))// kiểm tra ăn tốt địch
+                {
+                    yield return new EnPassant(from, to);
+                }
+                
+
+                else if (CanCaptureAt(to, board))// check xem quân đối phương ở vị trí ăn được k
                 {
                     if (to.Row == 0 || to.Row == 7)
                     {

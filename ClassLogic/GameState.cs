@@ -28,6 +28,7 @@ namespace ClassLogic
         }
         public void MakeMove(Move move) //Thực hiện nước đi
         { 
+            Board.SetPawnSkipPosition(CurrentPlayer, null);//Xóa En Passant vì nước đi mới bắt đầu
             move.Execute(Board);
             CurrentPlayer = CurrentPlayer.Opponent();
             CheckForGameOver();
@@ -42,7 +43,7 @@ namespace ClassLogic
             return moveCandidates.Where(move => move.IsLegal(Board));
         }
         private void CheckForGameOver() { 
-        if (!AllLegalMovesFor(CurrentPlayer).Any())
+          if (!AllLegalMovesFor(CurrentPlayer).Any())
             {
                 if (Board.IsInCheck(CurrentPlayer))
                 {
@@ -53,6 +54,12 @@ namespace ClassLogic
                     result = Result.Draw(EndReason.Stalemate);
                 }
             }
+          else if (Board.InsufficientMaterial())
+            {
+                result = Result.Draw(EndReason.InsufficientMaterial);
+            }
+            
+
         }
         public bool IsGameOver()
         {

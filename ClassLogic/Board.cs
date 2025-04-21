@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,6 +10,11 @@ namespace ClassLogic
     public class Board
     {
         private readonly Piece[,] pieces = new Piece[8, 8];
+        private readonly Dictionary<Player, Position> pawnSkipPositions = new Dictionary<Player, Position>
+        {//lưu vị trí mà tốt vừa đi qua 2 ô, giúp kiểm tra xem có được phép bắt qua đường hay không.
+            {Player.White,null },
+            {Player.Black,null }
+        };
         public Piece this[int row, int column]
         {
             get { return pieces[row, column]; }
@@ -18,6 +24,15 @@ namespace ClassLogic
         {
             get { return pieces[position.Row, position.Column]; }
             set { pieces[position.Row, position.Column] = value; }
+        }
+
+        public Position GetPawnSkipPosition(Player player)//ô mà tốt của player vừa nhảy qua 2 ô
+        {
+            return pawnSkipPositions[player];
+        }
+        public void SetPawnSkipPosition(Player player, Position position)//Cập nhật ô skip khi tốt vừa đi 2 bước.
+        {
+            pawnSkipPositions[player] = position;
         }
         public static Board Initial() {
             Board board = new Board();
@@ -97,6 +112,59 @@ namespace ClassLogic
                 copy[pos] = this[pos].Copy();
             }
             return copy;
+        }
+        public Counting CountPieces()
+        {
+            Counting counting = new Counting();
+            foreach (Position pos in PiecePositions())
+            {
+                Piece piece = this[pos];
+                counting.Increment(piece.Color, piece.Type);
+            }
+            return counting;
+        }
+        public bool InsufficientMaterial() {
+
+            Counting counting = CountPieces();
+            return IsKingVKing(counting) ||
+                   IsKingBishopVKing(counting) ||
+                   IsKingKnightVKing(counting) ||
+                   IsKingBishopVKingBishop(counting);
+
+        }
+        private static bool IsKingVKing(Counting counting)
+        {
+            return counting.TotalCount == 2;
+        }
+        private static bool IsKingBishopVKing(Counting counting)
+        {
+            return counting.TotalCount == 3 && (counting.White(PieceType.Bishop) == 1 || counting.Black(PieceType.Bishop) == 1);
+        }
+        private static bool IsKingKnightVKing(Counting counting)
+        {
+            return counting.TotalCount == 3 && (counting.White(PieceType.Knight) == 1 || counting.Black(PieceType.Knight) == 1);
+        }
+        private  bool IsKingBishopVKingBishop(Counting counting)
+        {
+            if (counting.TotalCount != 4)
+            {
+                return false;
+            }
+            if(counting.White(PieceType.Bishop) != 1 || counting.Black(PieceType.Bishop) != 1)
+            {
+                return false;
+            }
+            //------------------------------------------
+            
+            Position wBishopPos = FindPiece(Player.White, PieceType.Bishop); // Use the instance to call FindPiece
+            Position bBishopPos = FindPiece(Player.Black, PieceType.Bishop);
+            return wBishopPos.SquareColor() == bBishopPos.SquareColor();
+
+        }
+        private Position FindPiece(Player color, PieceType type)
+        {
+            return PiecePositionsFor(color)
+                .First(pos => this[pos].Type == type);
         }
     }
 }
