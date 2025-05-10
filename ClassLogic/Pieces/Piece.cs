@@ -34,5 +34,14 @@ namespace ClassLogic
         {
            return dirs.SelectMany(dir => MovePositionsInDir(from, board, dir));
         }
+        public virtual bool CanCaptureOpponentKing(Position from, Board board)// kiểm tra xem ăn được vua k
+        {
+           
+            return GetMoves(from, board).Any(move =>
+            {
+                Piece piece = board[move.ToPos];
+                return piece != null && piece.Type == PieceType.King ;
+            });
+        }
     }
 }
