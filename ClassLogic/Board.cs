@@ -123,7 +123,7 @@ namespace ClassLogic
             }
             return counting;
         }
-        public bool InsufficientMaterial() {
+        public bool InsufficientMaterial() {// hoa k du quan
 
             Counting counting = CountPieces();
             return IsKingVKing(counting) ||
@@ -165,6 +165,71 @@ namespace ClassLogic
         {
             return PiecePositionsFor(color)
                 .First(pos => this[pos].Type == type);
+        }
+
+        private bool IsUnMoveKingandRook(Position kingpos, Position rookpos)// kiểm tra vua và xe chưa di chuyển
+        {
+            if (IsEmpty(kingpos)|| IsEmpty(rookpos))
+            {
+                return false;
+            }
+            Piece king = this[kingpos];
+            Piece rook = this[rookpos];
+            return king.Type == PieceType.King && rook.Type == PieceType.Rook && !king.HasMoved && !rook.HasMoved;
+        }
+        public bool CastleRightKS (Player player)
+        {
+            return player switch
+            {
+                Player.White => IsUnMoveKingandRook(new Position(7, 4), new Position(7, 7)),
+                Player.Black => IsUnMoveKingandRook(new Position(0, 4), new Position(0, 7)),
+                _ => false
+            };
+        }
+        public bool CastleLeftQS(Player player)
+        {
+            return player switch
+            {
+                Player.White => IsUnMoveKingandRook(new Position(7, 4), new Position(7, 0)),
+                Player.Black => IsUnMoveKingandRook(new Position(0, 4), new Position(0, 0)),
+                _ => false
+            };
+        }
+
+        private bool HasPawnInPosition(Player player, Position[] pawnPositions, Position skipPos)//Kiểm tra có quân tốt của player đứng tại các vị trí bắt qua đường không
+        {
+            foreach (Position pos in pawnPositions.Where(IsInside)) {
+
+                Piece piece = this[pos];
+                if (piece == null || piece.Color != player || piece.Type != PieceType.Pawn)
+                {
+                    continue;//ô đó không có quân, không phải quân của bạn, hoặc không phải là tốt => bỏ qua
+                }
+                EnPassant move = new EnPassant(pos, skipPos);//Tạo một nước đi "giả định" En Passant từ vị trí hiện tại đến skipPos
+                if (move.IsLegal(this))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        public bool CanCaptureEnPassant(Player player)
+        {
+            Position skipPos = GetPawnSkipPosition(player.Opponent());
+            if (skipPos == null)
+            {
+                return false;
+            }
+            Position[] pawnPositions = player switch
+            {
+                Player.White => new Position[] { skipPos + Direction.SouthWest, skipPos + Direction.SouthEast },
+                Player.Black => new Position[] { skipPos + Direction.NorthWest, skipPos + Direction.NorthEast },
+                _ => Array.Empty<Position>()
+
+            };
+            return HasPawnInPosition(player, pawnPositions, skipPos);
         }
     }
 }
